@@ -7,4 +7,11 @@ export class CategoryService {
         const newCategory = new CategoryModal(category);
         return newCategory.save();
     }
+    async getAll() {
+        return await CategoryModal.find();
+    }
+
+    async getOne(categoryId: string) {
+        return await CategoryModal.findOne({ _id: categoryId });
+    }
 }

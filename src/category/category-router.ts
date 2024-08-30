@@ -17,4 +17,12 @@ router.post(
     categoryValidator,
     asyncWrapper(categoryController.create.bind(categoryController)),
 );
+router.get(
+    "/",
+    asyncWrapper(categoryController.index.bind(categoryController)),
+);
+router.get(
+    "/:categoryId",
+    asyncWrapper(categoryController.getOne.bind(categoryController)),
+);
 export default router;
