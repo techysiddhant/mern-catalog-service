@@ -47,4 +47,47 @@ export class ProductController {
         const newProduct = await this.productService.createProduct(product);
         res.json({ id: newProduct._id });
     }
+    async update(req: Request, res: Response, next: NextFunction) {
+        const result = validationResult(req);
+        if (!result.isEmpty()) {
+            return next(createHttpError(400, result.array()[0].msg as string));
+        }
+        const { productId } = req.params;
+        let imageName: string | undefined;
+        let oldImage: string | undefined;
+        if (req.files?.image) {
+            oldImage = await this.productService.getProductImage(productId);
+            const image = req.files.image as UploadedFile;
+            imageName = uuidv4();
+            await this.storage.upload({
+                filename: imageName,
+                fileData: image.data.buffer,
+            });
+            await this.storage.delete(oldImage!);
+        }
+        const {
+            name,
+            description,
+            priceConfiguration,
+            attributes,
+            tenantId,
+            categoryId,
+            isPublish,
+        } = req.body as Product;
+        const product = {
+            name,
+            description,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            priceConfiguration: JSON.parse(priceConfiguration),
+            attributes: JSON.parse(attributes as unknown as string),
+            tenantId,
+            categoryId,
+            isPublish,
+            image: imageName ? imageName : (oldImage as string),
+        };
+        await this.productService.updateProduct(productId, product);
+        res.json({
+            id: productId,
+        });
+    }
 }
