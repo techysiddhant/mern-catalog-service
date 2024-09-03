@@ -45,5 +45,5 @@ router.put(
     updateProductValidator,
     asyncWrapper(productController.update.bind(productController)),
 );
-
+router.get("/", asyncWrapper(productController.index.bind(productController)));
 export default router;
