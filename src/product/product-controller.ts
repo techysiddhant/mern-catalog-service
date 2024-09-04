@@ -152,4 +152,16 @@ export class ProductController {
             currentPage: products.page,
         });
     }
+    async get(req: Request, res: Response, next: NextFunction) {
+        const { productId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return next(createHttpError(404, "Invalid Product ID"));
+        }
+        const product = await this.productService.getPublicProduct(productId);
+        if (!product) {
+            return next(createHttpError(404, "Product not found"));
+        }
+        product.image = this.storage.getObjectUri(product.image);
+        res.json(product);
+    }
 }

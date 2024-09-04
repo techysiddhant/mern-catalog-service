@@ -63,4 +63,7 @@ export class ProductService {
             customLabels: paginationLabels,
         });
     }
+    async getPublicProduct(productId: string): Promise<Product | null> {
+        return await productModel.findOne({ _id: productId, isPublish: true });
+    }
 }
