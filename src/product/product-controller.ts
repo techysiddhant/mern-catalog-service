@@ -11,10 +11,13 @@ import { UploadedFile } from "express-fileupload";
 import { AuthRequest } from "../common/types";
 import { Roles } from "../common/constants";
 import mongoose from "mongoose";
+import { MessageProducerBroker } from "../common/types/broker";
+import config from "config";
 export class ProductController {
     constructor(
         private productService: ProductService,
         private storage: FileStorage,
+        private broker: MessageProducerBroker,
     ) {}
     async create(req: Request, res: Response, next: NextFunction) {
         const result = validationResult(req);
@@ -48,6 +51,13 @@ export class ProductController {
             image: imageName,
         };
         const newProduct = await this.productService.createProduct(product);
+        await this.broker.sendMessage(
+            config.get("kafka.topic"),
+            JSON.stringify({
+                id: newProduct._id,
+                priceConfiguration: newProduct.priceConfiguration,
+            }),
+        );
         res.json({ id: newProduct._id });
     }
     async update(req: Request, res: Response, next: NextFunction) {
@@ -103,7 +113,17 @@ export class ProductController {
             isPublish,
             image: imageName ? imageName : (oldImage as string),
         };
-        await this.productService.updateProduct(productId, product);
+        const updatedProduct = await this.productService.updateProduct(
+            productId,
+            product,
+        );
+        await this.broker.sendMessage(
+            config.get("kafka.topic"),
+            JSON.stringify({
+                id: updatedProduct._id,
+                priceConfiguration: updatedProduct.priceConfiguration,
+            }),
+        );
         res.json({
             id: productId,
         });
