@@ -9,11 +9,14 @@ import createHttpError from "http-errors";
 import mongoose from "mongoose";
 import { AuthRequest } from "../common/types";
 import { Roles } from "../common/constants";
+import { MessageProducerBroker } from "../common/types/broker";
+import config from "config";
 
 export class ToppingController {
     constructor(
         private storage: FileStorage,
         private toppingService: ToppingService,
+        private broker: MessageProducerBroker,
     ) {}
     async create(
         req: Request<object, object, CreateRequestBody>,
@@ -39,7 +42,13 @@ export class ToppingController {
         // todo: add logging
         // Send topping to kafka.
         // todo: move topic name to the config
-
+        await this.broker.sendMessage(
+            config.get("kafka.topicTopping"),
+            JSON.stringify({
+                id: savedTopping._id,
+                price: savedTopping.price,
+            }),
+        );
         res.json({ id: savedTopping._id });
     }
     async index(req: Request, res: Response, next: NextFunction) {
@@ -131,6 +140,13 @@ export class ToppingController {
         const updateTopping = await this.toppingService.updateTopping(
             toppingId,
             toppingToUpdate,
+        );
+        await this.broker.sendMessage(
+            config.get("kafka.topicTopping"),
+            JSON.stringify({
+                id: updateTopping?._id,
+                price: updateTopping?.price,
+            }),
         );
         res.json({ id: updateTopping?._id });
     }
